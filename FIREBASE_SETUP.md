@@ -1,210 +1,207 @@
 # Firebase Setup Guide
 
-Follow these steps to set up Firebase for your Daily Standup Generator.
+Complete guide to set up Firebase Authentication and Firestore Database for Daily Standup Generator.
+
+## Prerequisites
+
+- Google account
+- Node.js and npm installed
+- Daily Standup Generator project
 
 ## Step 1: Create Firebase Project
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click "Add project" or "Create a project"
-3. Enter project name: `daily-standup-generator`
+1. Visit [Firebase Console](https://console.firebase.google.com/)
+2. Click **"Add project"** or **"Create a project"**
+3. Enter project name: `daily-standup-app`
 4. (Optional) Enable Google Analytics
-5. Click "Create project"
+5. Click **"Create project"** and wait
 
 ## Step 2: Register Web App
 
-1. In your Firebase project dashboard, click the **Web icon** (`</>`)
-2. Register app with nickname: `Daily Standup Web`
-3. (Optional) Check "Also set up Firebase Hosting"
-4. Click "Register app"
-5. Copy the Firebase configuration object
-
-## Step 3: Get Firebase Config
-
-You'll see something like this:
+1. In Firebase dashboard, click **Web icon** (`</>`)
+2. App nickname: `Daily Standup Web`
+3. Check **"Also set up Firebase Hosting"** (optional)
+4. Click **"Register app"**
+5. **Copy** the configuration:
 
 ```javascript
 const firebaseConfig = {
   apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  authDomain: "daily-standup-xxxxx.firebaseapp.com",
-  projectId: "daily-standup-xxxxx",
-  storageBucket: "daily-standup-xxxxx.firebasestorage.app",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project",
+  storageBucket: "your-project.appspot.com",
   messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:xxxxxxxxxxxxx"
+  appId: "1:123456789012:web:abcdef123456"
 };
 ```
 
-## Step 4: Update Your Code
+## Step 3: Enable Google Authentication
 
-Replace the config in `src/lib/firebase.ts`:
+1. Go to **"Build"** → **"Authentication"**
+2. Click **"Get started"**
+3. **"Sign-in method"** tab
+4. Click **"Google"**
+5. Toggle **Enable**
+6. Select support email
+7. Click **"Save"**
 
-```typescript
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",           // Replace with your values
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-```
+**Authorized Domains:**
+- Verify `localhost` is listed (default)
+- Add production domain when deploying
 
-## Step 5: Enable Authentication
+## Step 4: Set Up Firestore Database
 
-1. In Firebase Console, go to **Authentication**
-2. Click "Get started"
-3. Select **Sign-in method** tab
-4. Enable **Google** provider:
-   - Click on "Google"
-   - Toggle "Enable"
-   - Enter support email (your email)
-   - Click "Save"
+1. Go to **"Build"** → **"Firestore Database"**
+2. Click **"Create database"**
+3. Choose **"Start in production mode"**
+4. Select location (closest to users)
+5. Click **"Enable"**
 
-## Step 6: Create Firestore Database
+### Security Rules
 
-1. In Firebase Console, go to **Firestore Database**
-2. Click "Create database"
-3. Select "Start in **production mode**"
-4. Choose your location (e.g., `us-central`)
-5. Click "Enable"
-
-## Step 7: Set Firestore Security Rules
-
-1. Go to **Firestore Database** → **Rules**
-2. Replace the default rules with:
+Go to **"Rules"** tab and paste:
 
 ```javascript
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Standup entries - users can only read/write their own data
     match /standups/{standupId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && 
+                     request.auth.uid == resource.data.userId;
+      
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.userId;
+      
+      allow update, delete: if request.auth != null && 
+                               request.auth.uid == resource.data.userId;
     }
   }
 }
 ```
 
-3. Click "Publish"
+Click **"Publish"**
 
-## Step 8: Create Firestore Index (Optional but Recommended)
+### Create Index
 
-For better query performance:
+1. **"Indexes"** tab → **"Create Index"**
+2. Configuration:
+   - Collection: `standups`
+   - Fields:
+     - `userId` (Ascending)
+     - `createdAt` (Descending)
+3. Click **"Create"**
 
-1. Go to **Firestore Database** → **Indexes**
-2. Click "Add index"
-3. Collection ID: `standups`
-4. Add fields:
-   - `userId` (Ascending)
-   - `createdAt` (Descending)
-5. Click "Create"
+## Step 5: Configure Environment
 
-## Step 9: Configure OAuth Consent Screen
+Create `.env` file in project root:
 
-For Google Sign-In to work properly:
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Select your Firebase project
-3. Go to **APIs & Services** → **OAuth consent screen**
-4. Select "External" user type
-5. Fill in:
-   - App name: `Daily Standup Generator`
-   - User support email: Your email
-   - Developer contact: Your email
-6. Click "Save and Continue"
-7. Skip "Scopes" section
-8. Add test users (your email and any testers)
-9. Click "Save and Continue"
-
-## Step 10: Add Authorized Domains
-
-1. Back in Firebase Console
-2. Go to **Authentication** → **Settings** → **Authorized domains**
-3. Add your domains:
-   - `localhost` (for development - should already be there)
-   - Your production domain (e.g., `daily-standup.vercel.app`)
-
-## Step 11: Test the Setup
-
-1. Start your development server: `npm run dev`
-2. Open the app in browser
-3. Click "Sign in with Google"
-4. Sign in with your Google account
-5. Try generating a standup
-6. Check Firebase Console → Firestore Database to see the data
-
-## Troubleshooting
-
-### "Auth domain is not configured"
-- Make sure you've added your domain to Authorized domains
-- For localhost, use `http://localhost:5173` exactly
-
-### "Permission denied" in Firestore
-- Check your security rules
-- Make sure you're signed in
-- Verify `userId` field matches the authenticated user
-
-### Google Sign-In popup blocked
-- Allow popups for localhost in your browser
-- Check if OAuth consent screen is properly configured
-
-### "API key not valid"
-- Double-check your Firebase config in `src/lib/firebase.ts`
-- Make sure all values are correct (no extra spaces)
-
-## Environment Variables (Production)
-
-For production deployment, use environment variables:
-
-Create `.env`:
+```bash
+cp .env.example .env
 ```
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+
+Edit `.env` with your Firebase config:
+
+```env
+VITE_FIREBASE_API_KEY=your_api_key_here
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-Update `src/lib/firebase.ts`:
-```typescript
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
+**Important:** Never commit `.env` to git!
+
+## Step 6: Test Setup
+
+```bash
+npm start
 ```
 
-Add `.env` to `.gitignore`!
+1. Open http://localhost:5173
+2. Click **"Sign in with Google"**
+3. Complete sign-in
+4. Generate a standup
+5. Verify in Firestore
 
-## Cost Considerations
+### Verify Authentication
 
-Firebase Free Tier (Spark Plan) includes:
-- **Authentication**: Unlimited users
-- **Firestore**: 
-  - 1 GB storage
-  - 50K reads/day
-  - 20K writes/day
-  - 20K deletes/day
+Firebase Console → **Authentication** → **Users**
+- Your Google account should appear
 
-This is more than enough for personal use or small teams!
+### Verify Firestore Data
 
-## Next Steps
+Firebase Console → **Firestore Database** → **Data**
+- Click `standups` collection
+- See your entries with:
+  - `userId`
+  - `yesterday`, `today`, `blockers`
+  - `tone`, `style`
+  - `generatedText`
+  - `createdAt`
 
-✅ Firebase setup complete!
-✅ Authentication working
-✅ Firestore connected
-✅ Security rules configured
+## Troubleshooting
 
-Now you can:
-- Deploy to production (Vercel/Netlify)
-- Add more features
-- Invite your team
-- Track usage in Firebase Console
+### "auth/unauthorized-domain"
 
-Happy coding! 🚀
+**Solution:**
+- Firebase Console → Authentication → Settings → Authorized domains
+- Add your domain
+
+### "Missing permissions"
+
+**Solution:**
+- Check Firestore Security Rules
+- Verify you're signed in
+- Check `userId` matches auth UID
+
+### "Firebase Config Not Found"
+
+**Solution:**
+- Create `.env` file
+- Add all `VITE_` variables
+- Restart dev server
+
+### Index Error
+
+**Solution:**
+- Firebase shows link to create index
+- Click link and wait
+- Or create manually in Step 4
+
+## Data Structure
+
+```typescript
+{
+  id: string,
+  userId: string,
+  yesterday: string,
+  today: string,
+  blockers: string,
+  tone: 'formal' | 'casual' | 'humorous',
+  style: 'short' | 'standard' | 'manager' | 'developer',
+  generatedText: string,
+  createdAt: Timestamp
+}
+```
+
+## Security Best Practices
+
+1. Never commit `.env` or real config to public repos
+2. Use environment variables
+3. Implement proper Firestore rules
+4. Keep Firebase SDK updated
+5. Enable App Check for production
+
+## Resources
+
+- [Firebase Docs](https://firebase.google.com/docs)
+- [Authentication Guide](https://firebase.google.com/docs/auth)
+- [Firestore Docs](https://firebase.google.com/docs/firestore)
+- [Security Rules](https://firebase.google.com/docs/firestore/security/get-started)
+
+---
+
+**Setup Complete!** 🎉 Firebase is now connected with authentication and cloud storage.
 
