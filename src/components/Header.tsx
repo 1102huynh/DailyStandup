@@ -1,9 +1,32 @@
-import { LogIn, LogOut, Sparkles } from 'lucide-react';
+import { LogIn, LogOut, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../hooks/useAuth';
+import { useState } from 'react';
 
 export function Header() {
-  const { user, signIn, signOut } = useAuth();
+  const { user, loading, signIn, signOut } = useAuth();
+  const [signingIn, setSigningIn] = useState(false);
+
+  const handleSignIn = async () => {
+    try {
+      setSigningIn(true);
+      await signIn();
+    } catch (error: any) {
+      console.error('Sign in failed:', error);
+      alert('Sign in failed. Please try again.');
+    } finally {
+      setSigningIn(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out failed:', error);
+      alert('Sign out failed. Please try again.');
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-white/20 shadow-lg">
@@ -29,7 +52,12 @@ export function Header() {
 
           {/* User Section */}
           <div className="flex items-center gap-4">
-            {user ? (
+            {loading ? (
+              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-sm">Loading...</span>
+              </div>
+            ) : user ? (
               <div className="flex items-center gap-4">
                 <div className="hidden sm:flex items-center gap-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
                   {user.photoURL && (
@@ -45,7 +73,7 @@ export function Header() {
                   </div>
                 </div>
                 <Button
-                  onClick={signOut}
+                  onClick={handleSignOut}
                   variant="outline"
                   size="sm"
                   className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-white/20 hover:bg-white/80 dark:hover:bg-slate-800/80"
@@ -56,11 +84,21 @@ export function Header() {
               </div>
             ) : (
               <Button
-                onClick={signIn}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                onClick={handleSignIn}
+                disabled={signingIn}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <LogIn className="h-4 w-4 mr-2" />
-                Sign in with Google
+                {signingIn ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign in with Google
+                  </>
+                )}
               </Button>
             )}
           </div>
