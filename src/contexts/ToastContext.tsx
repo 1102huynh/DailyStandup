@@ -1,9 +1,19 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext } from 'react';
+import type { ReactNode } from 'react';
 import { useToast } from '../hooks/useToast';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
+interface Toast {
+  id: string;
+  message: string;
+  type: ToastType;
+}
+
 interface ToastContextType {
+  toasts: Toast[];
+  addToast: (message: string, type?: ToastType) => void;
+  removeToast: (id: string) => void;
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
